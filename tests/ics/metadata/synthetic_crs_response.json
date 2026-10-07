@@ -1,0 +1,56 @@
+{
+    "generic-metadata-type": "MI.HostMetadata",
+    "generic-metadata-value": {
+        "metadata": [
+            {
+                "generic-metadata-type": "MI.ClientRequestStage",
+                "generic-metadata-value": {
+                    "match-groups": [
+                        {
+                            "generic-metadata-type": "MI.MatchGroup",
+                            "generic-metadata-value": {
+                                "if-rule": {
+                                    "generic-metadata-type": "MI.StageRules",
+                                    "generic-metadata-value": {
+                                        "match": {
+                                            "generic-metadata-type": "MI.ExpressionMatch",
+                                            "generic-metadata-value": {
+                                                "expression": "true"
+                                            }
+                                        },
+                                        "stage-metadata": {
+                                            "generic-metadata-type": "MI.StageMetadata",
+                                            "generic-metadata-value": {
+                                                "generic-metadata": [],
+                                                "request-transform": {
+                                                    "generic-metadata-type": "MI.RequestTransform",
+                                                    "generic-metadata-value": {
+                                                        "uri": "http://www.cnn.com"
+                                                    }
+                                                },
+                                                "response-transform": {
+                                                    "generic-metadata-type": "MI.ResponseTransform",
+                                                    "generic-metadata-value": {
+                                                        "response-status": "200",
+                                                        "synthetic": {
+                                                            "generic-metadata-type": "MI.SyntheticResponse",
+                                                            "generic-metadata-value": {
+                                                                "body": "\"using builtin mel string functions: \" . upper(\"one\")",
+                                                                "body-is-expression": true,
+																																"response-status": "200"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

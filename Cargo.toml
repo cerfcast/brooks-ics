@@ -1,0 +1,36 @@
+[package]
+name = "brooks-ics"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-cors = "0.7.1"
+actix-utils = "3.0.1"
+actix-web = "4.14.0"
+awc = "3.8.2"
+chrono = {version = "0.4.45", features = ["serde"] }
+clap = { version = "4.6.1", features = ["derive"] }
+clio = { version = "0.3.5", features = ["clap-parse"] }
+flexi_logger = "0.31.10"
+futures-util = "0.3.32"
+http = "1.4.2"
+insta = { version = "1.48.0", features = ["filters"] }
+insta-cmd = "0.6.0"
+log = { version = "0.4.34", features = ["std"] }
+pwd-grp = "1.0.2"
+serde = "1.0.228"
+serde_json = "1.0.150"
+tokio = {version = "1.53.1", features = ["rt", "macros"] }
+url = "2.5.8"
+
+# Depending upon whether we are compiling on UNIX or Windows,
+# configure the library with the domain feature.
+[target.'cfg(unix)'.dependencies]
+brooks-lib = { path = "lib", default-features = false, features = ["serializable_logs", "hmds", "domain", "mi_all_processors", "logger"] }
+
+[target.'cfg(not(unix))'.dependencies]
+brooks-lib = { path = "lib", default-features = false, features = ["serializable_logs", "hmds", "mi_all_processors", "logger"] }
+
+[features]
+domain = []
+default = []

@@ -1,0 +1,31 @@
+on: [push, pull_request]
+
+name: Continuous Integration
+
+jobs:
+  ics-tests-domain:
+    name: ICS Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: cargo build -F domain
+      - run: cargo test -F domain
+  ics-tests-windows:
+    name: ICS Tests (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: cargo build
+      - run: cargo test
+  cli-format-tests:
+    name: Library Format Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: cargo fmt
