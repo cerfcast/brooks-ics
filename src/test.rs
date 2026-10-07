@@ -60,6 +60,8 @@ mod cli_tests {
             "8081",
             "--timeout",
             "25s",
+            "--path",
+            "/tmp/todo-use-actual-unique-value",
             "--user",
             "testing_user",
         ]));
