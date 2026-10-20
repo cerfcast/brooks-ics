@@ -26,10 +26,10 @@ url = "2.5.8"
 # Depending upon whether we are compiling on UNIX or Windows,
 # configure the library with the domain feature.
 [target.'cfg(unix)'.dependencies]
-brooks-lib = { path = "lib", default-features = false, features = ["serializable_logs", "hmds", "domain", "mi_all_processors", "logger"] }
+brooks-lib = { path = "lib", default-features = false, features = ["processing", "hmds", "domain"] }
 
 [target.'cfg(not(unix))'.dependencies]
-brooks-lib = { path = "lib", default-features = false, features = ["serializable_logs", "hmds", "mi_all_processors", "logger"] }
+brooks-lib = { path = "lib", default-features = false, features = ["processing", "hmds"] }
 
 [features]
 domain = []
