@@ -322,6 +322,7 @@ pub async fn domain_hmds(config: HmdsDomainConfiguration) -> io::Result<()> {
         };
 
         let query = String::from_utf8(buf).expect("Could not convert into string");
+        info!("HMDS query on UNIX domain socket: {query}");
 
         let found = {
             let hmds = config.hmds.lock().unwrap();
