@@ -1,0 +1,58 @@
+{
+    "generic-metadata-type": "MI.HostMetadata",
+    "generic-metadata-value": {
+        "metadata": [
+            {
+                "generic-metadata-type": "MI.SetVariable",
+                "generic-metadata-value": {
+                    "variable-name": "testing",
+                    "variable-value": "1",
+                    "value-is-expression": true
+                }
+            },
+            {
+                "generic-metadata-type": "MI.ClientRequestStage",
+                "generic-metadata-value": {
+                    "match-groups": [
+                        {
+                            "generic-metadata-type": "MI.MatchGroup",
+                            "generic-metadata-value": {
+                                "if-rule": {
+                                    "generic-metadata-type": "MI.StageRules",
+                                    "generic-metadata-value": {
+                                        "match": {
+                                            "generic-metadata-type": "MI.ExpressionMatch",
+                                            "generic-metadata-value": {
+                                                "expression": "true"
+                                            }
+                                        },
+                                        "stage-metadata": {
+                                            "generic-metadata-type": "MI.StageMetadata",
+                                            "generic-metadata-value": {
+                                                "generic-metadata": [],
+                                                "response-transform": {
+                                                    "generic-metadata-type": "MI.ResponseTransform",
+                                                    "generic-metadata-value": {
+                                                        "response-status": "200",
+                                                        "synthetic": {
+                                                            "generic-metadata-type": "MI.SyntheticResponse",
+                                                            "generic-metadata-value": {
+                                                                "body": "\"Value of variable set using MI.SetVariable in HMD: \" . string(var^testing)",
+                                                                "body-is-expression": true,
+                                                                "response-status": "200"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}
