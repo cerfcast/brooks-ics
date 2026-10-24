@@ -1,2 +1,0 @@
-curl -X PUT "http://127.0.0.1:8081/update/?host=www.gmail.com" --json @tests/ics/metadata/synthetic_crs_response.json | jq .
-
