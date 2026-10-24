@@ -35,6 +35,20 @@ mod cli_tests {
         assert_cmd_snapshot!(Command::new(get_cargo_bin("brooks-ics")).arg("--help"));
     }
 
+    #[cfg(feature = "domain")]
+    #[test]
+    fn hmds_help_test_with_domain() {
+        apply_binary_name_filters!();
+        assert_cmd_snapshot!(Command::new(get_cargo_bin("brooks-ics")).args(["hmds", "--help"]));
+    }
+
+    #[cfg(not(feature = "domain"))]
+    #[test]
+    fn hmds_help_test_without_domain() {
+        apply_binary_name_filters!();
+        assert_cmd_snapshot!(Command::new(get_cargo_bin("brooks-ics")).args(["hmds", "--help"]));
+    }
+
     #[cfg(not(feature = "domain"))]
     #[test]
     fn no_domain_feature_test() {

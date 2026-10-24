@@ -1,0 +1,23 @@
+---
+source: src/test.rs
+info:
+  program: brooks-ics
+  args:
+    - hmds
+    - "--help"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Usage: [BROOKS_ICS] hmds [OPTIONS]
+
+Options:
+      --host <HOST>        [default: 127.0.0.1]
+      --port <PORT>        [default: 8080]
+      --path <PATH>        [default: /tmp/brooks/server]
+      --timeout <TIMEOUT>  [default: 300s]
+      --user <USER>        
+      --group <GROUP>      
+  -h, --help               Print help
+
+----- stderr -----

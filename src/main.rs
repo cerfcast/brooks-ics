@@ -127,7 +127,7 @@ enum Commands {
         #[arg(long, default_value = "/tmp/brooks/server")]
         path: clio::ClioPath,
 
-        #[arg(long, default_value = "300", value_parser=clap::builder::ValueParser::new(parse_timeout_duration))]
+        #[arg(long, default_value = "300s", value_parser=clap::builder::ValueParser::new(parse_timeout_duration))]
         timeout: chrono::Duration,
 
         #[cfg(feature = "domain")]
