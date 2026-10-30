@@ -64,7 +64,7 @@ To see it in action, use
 
 There are several metadata files in the
 [tests/ics/metadata/](./tests/ics/metadata/) directory that can be used for
-testing. See [tests/ics/metadata/README.md](./tests/ics/metadata/README.md) for
+testing. See [tests/ics/README.md](./tests/ics/README.md) for
 a description of the semantics of each.
 
 There are `source`able `curl` commands in [tests/ics/](./tests/ics/) that can be
