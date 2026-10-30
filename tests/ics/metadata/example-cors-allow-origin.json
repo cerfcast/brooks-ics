@@ -1,0 +1,82 @@
+{
+    "generic-metadata-type": "MI.HostMetadata",
+    "generic-metadata-value": {
+        "metadata": [
+            {
+                "generic-metadata-type": "MI.Source",
+                "generic-metadata-value": {
+                    "endpoints": [
+                        "104.20.23.154:80"
+                    ],
+                    "protocol": "http/1.1"
+                }
+            },
+            {
+                "generic-metadata-type": "MI.CrossoriginPolicy",
+                "generic-metadata-value": {
+                    "allow-origin": {
+                        "allow-list": [
+                            {
+                                "pattern": "https://sourcepage.example.com"
+                            }
+                        ],
+                        "wildcard-return": true
+                    }
+                }
+            },
+            {
+                "generic-metadata-type": "MI.OriginRequestStage",
+                "generic-metadata-value": {
+                    "match-groups": [
+                        {
+                            "generic-metadata-type": "MI.MatchGroup",
+                            "generic-metadata-value": {
+                                "if-rule": {
+                                    "generic-metadata-type": "MI.StageRules",
+                                    "generic-metadata-value": {
+                                        "match": {
+                                            "generic-metadata-type": "MI.ExpressionMatch",
+                                            "generic-metadata-value": {
+                                                "expression": "true"
+                                            }
+                                        },
+                                        "stage-metadata": {
+                                            "generic-metadata-type": "MI.StageMetadata",
+                                            "generic-metadata-value": {
+                                                "generic-metadata": [],
+                                                "request-transform": {
+                                                    "generic-metadata-type": "MI.RequestTransform",
+                                                    "generic-metadata-value": {
+                                                        "uri": "http://www.example.com",
+                                                        "header-transform": {
+                                                            "generic-metadata-type": "MI.HeaderTransform",
+                                                            "generic-metadata-value": {
+                                                                "delete": [
+                                                                    "host"
+                                                                ],
+                                                                "add": [
+                                                                    {
+                                                                        "generic-metadata-type": "MI.Header",
+                                                                        "generic-metadata-value": {
+                                                                            "name": "host",
+                                                                            "value": "www.example.com",
+                                                                            "value-is-expression": false
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

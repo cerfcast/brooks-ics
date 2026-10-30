@@ -2,13 +2,15 @@
     "generic-metadata-type": "MI.HostMetadata",
     "generic-metadata-value": {
         "metadata": [
-						{
+            {
                 "generic-metadata-type": "MI.Source",
                 "generic-metadata-value": {
-												"endpoints": [ "151.101.3.5:443" ],
-												"protocol": "http/1.1" 
-								}
-						},
+                    "endpoints": [
+                        "104.20.23.154:80"
+                    ],
+                    "protocol": "http/1.1"
+                }
+            },
             {
                 "generic-metadata-type": "MI.ClientRequestStage",
                 "generic-metadata-value": {
@@ -32,42 +34,36 @@
                                                 "request-transform": {
                                                     "generic-metadata-type": "MI.RequestTransform",
                                                     "generic-metadata-value": {
-                                                        "uri": "https://www.cnn.com",
+                                                        "uri": "http://www.altavista.com",
                                                         "header-transform": {
                                                             "generic-metadata-type": "MI.HeaderTransform",
                                                             "generic-metadata-value": {
-                                                                "delete": [],
+                                                                "delete": [
+                                                                    "host"
+                                                                ],
                                                                 "add": [
                                                                     {
                                                                         "generic-metadata-type": "MI.Header",
                                                                         "generic-metadata-value": {
-                                                                            "name": "delete-me",
-                                                                            "value": "req^uri^path",
-                                                                            "value-is-expression": true
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "generic-metadata-type": "MI.Header",
-                                                                        "generic-metadata-value": {
-                                                                            "name": "origin-request-is-new-expr",
-                                                                            "value": "req^uri^path",
-                                                                            "value-is-expression": true
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "generic-metadata-type": "MI.Header",
-                                                                        "generic-metadata-value": {
-                                                                            "name": "request-is-new-expr",
-                                                                            "value": "req^uri^path",
-                                                                            "value-is-expression": true
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "generic-metadata-type": "MI.Header",
-                                                                        "generic-metadata-value": {
-                                                                            "name": "request-is-new",
-                                                                            "value": "SOMETHING",
+                                                                            "name": "host",
+                                                                            "value": "www.altavista.com",
                                                                             "value-is-expression": false
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "generic-metadata-type": "MI.Header",
+                                                                        "generic-metadata-value": {
+                                                                            "name": "client-request-request-xform-new-later-removed",
+                                                                            "value": "req^uri^path",
+                                                                            "value-is-expression": true
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "generic-metadata-type": "MI.Header",
+                                                                        "generic-metadata-value": {
+                                                                            "name": "client-request-request-xform-new",
+                                                                            "value": "req^uri^path",
+                                                                            "value-is-expression": true
                                                                         }
                                                                     }
                                                                 ]
@@ -81,21 +77,17 @@
                                                         "header-transform": {
                                                             "generic-metadata-type": "MI.HeaderTransform",
                                                             "generic-metadata-value": {
-                                                                "delete": [ ],
+                                                                "delete": [
+                                                                    "transfer-encoding",
+                                                                    "origin-request-response-xform-new-later-removed"
+                                                                ],
                                                                 "add": [
                                                                     {
                                                                         "generic-metadata-type": "MI.Header",
                                                                         "generic-metadata-value": {
-                                                                            "name": "response-is-new-expr",
+                                                                            "name": "client-request-response-xform-new",
                                                                             "value": "req^uri^path",
                                                                             "value-is-expression": true
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "generic-metadata-type": "MI.Header",
-                                                                        "generic-metadata-value": {
-                                                                            "name": "response-is-new",
-                                                                            "value": "something"
                                                                         }
                                                                     }
                                                                 ]
@@ -135,132 +127,60 @@
                                                 "request-transform": {
                                                     "generic-metadata-type": "MI.RequestTransform",
                                                     "generic-metadata-value": {
-                                                        "uri": "https://www.cnn.com",
+                                                        "uri": "http://www.example.com",
                                                         "header-transform": {
                                                             "generic-metadata-type": "MI.HeaderTransform",
                                                             "generic-metadata-value": {
                                                                 "delete": [
-                                                                    "origin-request-is-new-expr",
-                                                                    "delete-me"
+                                                                    "host",
+                                                                    "client-request-request-xform-new-later-removed"
                                                                 ],
                                                                 "add": [
                                                                     {
                                                                         "generic-metadata-type": "MI.Header",
                                                                         "generic-metadata-value": {
-                                                                            "name": "overwritable",
-                                                                            "value": "origin-request"
+                                                                            "name": "host",
+                                                                            "value": "www.example.com",
+                                                                            "value-is-expression": false
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "generic-metadata-type": "MI.Header",
+                                                                        "generic-metadata-value": {
+                                                                            "name": "origin-request-request-xform-new",
+                                                                            "value": "req^uri^path",
+                                                                            "value-is-expression": true
                                                                         }
                                                                     }
                                                                 ]
                                                             }
                                                         }
                                                     }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                "generic-metadata-type": "MI.OriginResponseStage",
-                "generic-metadata-value": {
-                    "match-groups": [
-                        {
-                            "generic-metadata-type": "MI.MatchGroup",
-                            "generic-metadata-value": {
-                                "if-rule": {
-                                    "generic-metadata-type": "MI.StageRules",
-                                    "generic-metadata-value": {
-                                        "match": {
-                                            "generic-metadata-type": "MI.ExpressionMatch",
-                                            "generic-metadata-value": {
-                                                "expression": "true"
-                                            }
-                                        },
-                                        "stage-metadata": {
-                                            "generic-metadata-type": "MI.StageMetadata",
-                                            "generic-metadata-value": {
-                                                "generic-metadata": [],
+                                                },
                                                 "response-transform": {
                                                     "generic-metadata-type": "MI.ResponseTransform",
                                                     "generic-metadata-value": {
                                                         "header-transform": {
                                                             "generic-metadata-type": "MI.HeaderTransform",
                                                             "generic-metadata-value": {
-                                                                "delete": [],
+                                                                "delete": [
+                                                                    "transfer-encoding"
+                                                                ],
                                                                 "add": [
                                                                     {
                                                                         "generic-metadata-type": "MI.Header",
                                                                         "generic-metadata-value": {
-                                                                            "name": "origin-response-is-new",
-                                                                            "value": "something"
+                                                                            "name": "origin-request-response-xform-new",
+                                                                            "value": "req^uri^path",
+                                                                            "value-is-expression": true
                                                                         }
                                                                     },
                                                                     {
                                                                         "generic-metadata-type": "MI.Header",
                                                                         "generic-metadata-value": {
-                                                                            "name": "overwritable",
-                                                                            "value": "starting"
-                                                                        }
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                "generic-metadata-type": "MI.ClientResponseStage",
-                "generic-metadata-value": {
-                    "match-groups": [
-                        {
-                            "generic-metadata-type": "MI.MatchGroup",
-                            "generic-metadata-value": {
-                                "if-rule": {
-                                    "generic-metadata-type": "MI.StageRules",
-                                    "generic-metadata-value": {
-                                        "match": {
-                                            "generic-metadata-type": "MI.ExpressionMatch",
-                                            "generic-metadata-value": {
-                                                "expression": "true"
-                                            }
-                                        },
-                                        "stage-metadata": {
-                                            "generic-metadata-type": "MI.StageMetadata",
-                                            "generic-metadata-value": {
-                                                "generic-metadata": [],
-                                                "response-transform": {
-                                                    "generic-metadata-type": "MI.ResponseTransform",
-                                                    "generic-metadata-value": {
-                                                        "header-transform": {
-                                                            "generic-metadata-type": "MI.HeaderTransform",
-                                                            "generic-metadata-value": {
-                                                                "delete": [],
-                                                                "add": [
-                                                                    {
-                                                                        "generic-metadata-type": "MI.Header",
-                                                                        "generic-metadata-value": {
-                                                                            "name": "client-response-is-new",
-                                                                            "value": "something"
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "generic-metadata-type": "MI.Header",
-                                                                        "generic-metadata-value": {
-                                                                            "name": "overwritable",
-                                                                            "value": "overwritten"
+                                                                            "name": "origin-request-response-xform-new-later-removed",
+                                                                            "value": "req^uri^path",
+                                                                            "value-is-expression": true
                                                                         }
                                                                     }
                                                                 ]
