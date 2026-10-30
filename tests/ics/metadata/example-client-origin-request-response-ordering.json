@@ -3,12 +3,16 @@
     "generic-metadata-value": {
         "metadata": [
             {
-                "generic-metadata-type": "MI.Source",
+                "generic-metadata-type": "MI.SourceMetadata",
                 "generic-metadata-value": {
-                    "endpoints": [
-                        "104.20.23.154:80"
-                    ],
-                    "protocol": "http/1.1"
+                    "sources": [
+                        {
+                            "endpoints": [
+                                "104.20.23.154:80"
+                            ],
+                            "protocol": "http/1.1"
+                        }
+                    ]
                 }
             },
             {

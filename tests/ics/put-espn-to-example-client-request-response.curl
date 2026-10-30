@@ -1,2 +1,0 @@
-curl -X PUT "http://127.0.0.1:8081/update/?host=www.espn.com" --json @tests/ics/metadata/example-client-request-response.json  | jq .
-
