@@ -22,10 +22,7 @@ use std::{
 };
 
 use actix_web::{App, HttpServer, delete, get, middleware::Logger, put, web};
-use brooks_lib::{
-    cdni::imd::spec::TypedHostMetadata,
-    integrations::{self, hmds::ExpirableJsonValue},
-};
+use brooks_lib::{cdni::imd::spec::TypedHostMetadata, hmds::ExpirableJsonValue};
 use chrono::{DateTime, Duration, Utc};
 
 use log::info;
@@ -140,13 +137,11 @@ async fn qry(
     };
 
     match found {
-        Some((key, (timestamp, found))) => Ok(serde_json::to_string(
-            &integrations::hmds::ExpirableJsonValue {
-                expiry: timestamp,
-                host: key,
-                value: serde_json::to_value(found)?,
-            },
-        )?),
+        Some((key, (timestamp, found))) => Ok(serde_json::to_string(&ExpirableJsonValue {
+            expiry: timestamp,
+            host: key,
+            value: serde_json::to_value(found)?,
+        })?),
         None => Ok(serde_json::to_string(&Value::Null)?),
     }
 }
@@ -334,7 +329,7 @@ pub async fn domain_hmds(config: HmdsDomainConfiguration) -> io::Result<()> {
             Some((key, (timestamp, found))) => {
                 write_entire(
                     &mut client,
-                    serde_json::to_string(&integrations::hmds::ExpirableJsonValue {
+                    serde_json::to_string(&ExpirableJsonValue {
                         expiry: timestamp,
                         host: key,
                         value: serde_json::to_value(found)?,

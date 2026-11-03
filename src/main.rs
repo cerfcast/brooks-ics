@@ -27,8 +27,7 @@ use brooks_lib;
 #[cfg(test)]
 mod test;
 
-use brooks_lib::integrations::hmds::HmdsServerConfiguration;
-
+use brooks_lib::hmds::HmdsServerConfiguration;
 use clap::{ArgAction, CommandFactory, Parser, Subcommand};
 use clio::ClioPath;
 use flexi_logger::{FileSpec, LogSpecification, Logger};
