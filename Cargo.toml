@@ -27,4 +27,4 @@ brooks-lib = { path = "lib", default-features = false, features = ["dcdn"] }
 
 [features]
 domain = []
-default = ["domain"]
+default = []
