@@ -3,8 +3,8 @@ on: [push, pull_request]
 name: Continuous Integration
 
 jobs:
-  ics-tests-domain:
-    name: ICS Tests
+  ics-tests-unix-domain:
+    name: ICS Tests (UNIX, Domain)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -12,6 +12,15 @@ jobs:
           submodules: true
       - run: cargo build -F domain
       - run: cargo test -F domain
+  ics-tests-unix-no-domain:
+    name: ICS Tests (UNIX, No Domain)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: cargo build
+      - run: cargo test
   ics-tests-windows:
     name: ICS Tests (Windows)
     runs-on: windows-latest
