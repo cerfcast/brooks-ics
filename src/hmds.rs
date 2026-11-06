@@ -21,10 +21,17 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use actix_web::{App, HttpServer, delete, get, middleware::Logger, put, web};
-use brooks_lib::{cdni::imd::spec::TypedHostMetadata, hmds::ExpirableJsonValue};
+use actix_web::{App, HttpServer, delete, get, middleware::Logger, post, put, web};
+#[cfg(feature = "domain")]
+use brooks_lib::{cdni::logging::record::LogRecord, hmds};
+use brooks_lib::{
+    cdni::{self, imd::spec::TypedHostMetadata},
+    hmds::ExpirableJsonValue,
+};
 use chrono::{DateTime, Duration, Utc};
 
+#[cfg(feature = "domain")]
+use log::error;
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -50,6 +57,7 @@ pub struct HmdsWebConfiguration {
 }
 
 #[cfg(feature = "domain")]
+#[derive(Clone)]
 pub struct HmdsDomainConfiguration {
     hmds: Arc<Mutex<HashMap<String, Hmds>>>,
     server_path: ClioPath,
@@ -57,6 +65,7 @@ pub struct HmdsDomainConfiguration {
     group: Option<String>,
 }
 #[cfg(not(feature = "domain"))]
+#[derive(Clone)]
 pub struct HmdsDomainConfiguration {}
 
 #[derive(Serialize, Deserialize)]
@@ -146,6 +155,18 @@ async fn qry(
     }
 }
 
+#[post("/plog/")]
+async fn plog(
+    body: web::Json<cdni::logging::record::LogRecordRaw>,
+    _data: web::Data<HmdsWebConfiguration>,
+) -> actix_web::Result<String> {
+    info!("HMDS log on HTTP.");
+    let log: LogRecord = TryInto::<LogRecord>::try_into(body.0).map_err(std::io::Error::other)?;
+    info!("HMDS log: {log:?}");
+
+    Ok("".into())
+}
+
 #[allow(unused)]
 pub async fn server(
     ip: String,
@@ -193,6 +214,7 @@ pub async fn server(
                     .service(add_hmd)
                     .service(status)
                     .service(qry)
+                    .service(plog)
                 })
                 .bind((web_configuration.ip, web_configuration.port))?
                 .run()
@@ -267,8 +289,8 @@ pub async fn domain_hmds(config: HmdsDomainConfiguration) -> io::Result<()> {
     #[cfg(feature = "domain")]
     {
         // Now that we have bound, let's try to change the permissions on that file.
-        let user = if let Some(user) = config.user {
-            let user = pwd_grp::getpwnam(&user)?.ok_or(io::Error::other(format!(
+        let user = if let Some(user) = &config.user {
+            let user = pwd_grp::getpwnam(user)?.ok_or(io::Error::other(format!(
                 "Cannot find information about user {}",
                 user
             )))?;
@@ -277,8 +299,8 @@ pub async fn domain_hmds(config: HmdsDomainConfiguration) -> io::Result<()> {
             None
         };
 
-        let group = if let Some(group) = config.group {
-            let group = pwd_grp::getgrnam(&group)?.ok_or(io::Error::other(format!(
+        let group = if let Some(group) = &config.group {
+            let group = pwd_grp::getgrnam(group)?.ok_or(io::Error::other(format!(
                 "Cannot find information about group {}",
                 group
             )))?;
@@ -301,49 +323,79 @@ pub async fn domain_hmds(config: HmdsDomainConfiguration) -> io::Result<()> {
     info!("Listening for HMDS queries on UNIX domain socket at {server_path}");
     loop {
         // Wait for the socket to be readable
-        let (mut client, _) = socket.accept().await?;
+        let (client, _) = socket.accept().await?;
 
-        client.readable().await?;
-
-        let incoming_buffer_size = match client.read_u64_le().await {
-            Ok(ibs) => ibs,
-            Err(_) => todo!(),
-        };
-
-        let mut buf: Vec<u8> = vec![0; incoming_buffer_size as usize];
-
-        if read_entire(&mut client, &mut buf).await.is_err() {
-            todo!();
-        };
-
-        let query = String::from_utf8(buf).expect("Could not convert into string");
-        info!("HMDS query on UNIX domain socket: {query}");
-
-        let found = {
-            let hmds = config.hmds.lock().unwrap();
-            hmds.get_key_value(&query)
-                .map(|(key, (ts, f))| (key.clone(), (*ts, f.clone())))
-        };
-
-        match found {
-            Some((key, (timestamp, found))) => {
-                write_entire(
-                    &mut client,
-                    serde_json::to_string(&ExpirableJsonValue {
-                        expiry: timestamp,
-                        host: key,
-                        value: serde_json::to_value(found)?,
-                    })
-                    .expect("Could not serialize")
-                    .as_bytes(),
-                )
-                .await?;
-            }
-            None => {
-                write_entire(&mut client, &[]).await?;
-            }
+        if let Err(e) = do_domain_hmds(client, config.clone()).await {
+            error!("Error processing HMDS message: {e}");
+            error!("Will continue ...");
         }
     }
+}
+
+#[cfg(feature = "domain")]
+pub async fn do_domain_hmds(
+    mut client: UnixStream,
+    config: HmdsDomainConfiguration,
+) -> io::Result<()> {
+    client.readable().await?;
+
+    let incoming_buffer_size = match client.read_u64_le().await {
+        Ok(ibs) => ibs,
+        Err(_) => todo!(),
+    };
+
+    let mut buf: Vec<u8> = vec![0; incoming_buffer_size as usize];
+
+    if read_entire(&mut client, &mut buf).await.is_err() {
+        todo!();
+    };
+
+    let message_body = String::from_utf8(buf).expect("Could not convert message body into string");
+    let message = serde_json::from_str::<hmds::HmdsDomainMessage>(&message_body)
+        .map_err(std::io::Error::other)?;
+
+    info!("HMDS message on UNIX domain socket: {message:?}");
+
+    match message.ty {
+        hmds::HmdsDomainMessageType::Query => {
+            info!("HMDS query on UNIX domain socket.");
+            let query = serde_json::from_value::<hmds::HmdsDomainMessageQuery>(message.value)
+                .map_err(std::io::Error::other)?;
+            let found = {
+                let hmds = config.hmds.lock().unwrap();
+                hmds.get_key_value(&query.query)
+                    .map(|(key, (ts, f))| (key.clone(), (*ts, f.clone())))
+            };
+
+            match found {
+                Some((key, (timestamp, found))) => {
+                    write_entire(
+                        &mut client,
+                        serde_json::to_string(&ExpirableJsonValue {
+                            expiry: timestamp,
+                            host: key,
+                            value: serde_json::to_value(found)?,
+                        })
+                        .map_err(std::io::Error::other)?
+                        .as_bytes(),
+                    )
+                    .await?;
+                }
+                None => {
+                    write_entire(&mut client, &[]).await?;
+                }
+            }
+        }
+        hmds::HmdsDomainMessageType::Log => {
+            info!("HMDS log on UNIX domain socket.");
+            let log_raw = serde_json::from_value::<hmds::HmdsDomainMessageLog>(message.value)
+                .map_err(std::io::Error::other)?;
+            let log: LogRecord =
+                TryInto::<LogRecord>::try_into(log_raw.log).map_err(std::io::Error::other)?;
+            info!("HMDS log: {log:?}");
+        }
+    }
+    Ok(())
 }
 
 #[cfg(not(feature = "domain"))]
