@@ -23,9 +23,9 @@ use std::{
 
 use actix_web::{App, HttpServer, delete, get, middleware::Logger, post, put, web};
 #[cfg(feature = "domain")]
-use brooks_lib::{cdni::logging::record::LogRecord, hmds};
+use brooks_lib::hmds;
 use brooks_lib::{
-    cdni::{self, imd::spec::TypedHostMetadata},
+    cdni::{self, imd::spec::TypedHostMetadata, logging::record::LogRecord},
     hmds::ExpirableJsonValue,
 };
 use chrono::{DateTime, Duration, Utc};
