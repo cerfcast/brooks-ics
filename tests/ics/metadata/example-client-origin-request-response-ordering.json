@@ -82,7 +82,6 @@
                                                             "generic-metadata-type": "MI.HeaderTransform",
                                                             "generic-metadata-value": {
                                                                 "delete": [
-                                                                    "transfer-encoding",
                                                                     "origin-request-response-xform-new-later-removed"
                                                                 ],
                                                                 "add": [
@@ -167,9 +166,6 @@
                                                         "header-transform": {
                                                             "generic-metadata-type": "MI.HeaderTransform",
                                                             "generic-metadata-value": {
-                                                                "delete": [
-                                                                    "transfer-encoding"
-                                                                ],
                                                                 "add": [
                                                                     {
                                                                         "generic-metadata-type": "MI.Header",
