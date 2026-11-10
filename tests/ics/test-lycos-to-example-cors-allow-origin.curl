@@ -1,0 +1,1 @@
+curl --connect-to ::localhost:8080 -H "Origin: https://sourcepage.example.com" http://www.lycos.com/ --verbose

@@ -1,14 +1,17 @@
+# Structural Metadata Testing Files and Tools
+
 ## Test Files
 
 There are several structural metadata files in this directory that can be used
 to test a dCDN's implementation of the CDNI specifications. Each of the files is
 designed to test certain parts of the CDNI specifications, as outlined below.
 
-The files are designed to _emulate_ a real-world deployment where the ICS that
-holds these values is supporting a dCDN. In some cases, the `Source` Generic
-Metadata information is used to specify the uCDN's IP address where original
-content is found. In others, synthetic responses are generating according to
-Processing Stages Generic Metadata.
+The files are designed to _emulate_ a real-world deployment where the
+interconnection server (ICS) that holds these values implements the CDNI control
+interface supporting a dCDN. In some cases, the `Source` Generic Metadata
+information is used to specify the uCDN's IP address where original content is
+found. In others, synthetic responses are generating according to Processing
+Stages Generic Metadata.
 
 A real deployment's actual structural metadata may not look anything like the
 files here -- these files are for testing purposes, mainly.
@@ -160,3 +163,30 @@ Use
 [`./put-lycos-to-example-cors-allow-origin.curl`](./put-lycos-to-example-cors-allow-origin.curl)
 to add this metadata to the ICS running locally and associate it with the
 `lycos.com` host.
+
+### `example-https-source-compress.json`
+
+This CDNI structural metadata file uses metadata objects from the Edge Control
+Metadata draft (`MI.AllowCompress`) in order to specify that the dCDN may (with
+the "consent" of the user agent) compress its response to the user agent.
+
+The body of the response should be compressed with the content content requested
+by the user agent (as specified in its `Accept-Encoding` header).
+
+Use
+[`./put-excite-to-example-https-source-compress.curl`]./put-excite-to-example-https-source-compress.curl)
+to add this metadata to the ICS running locally and associate it with the
+`excite.com` host.
+
+## Test Tools
+
+In addition to the files mentioned [above](#test-files) that contain `curl`
+commands that can be used to install structural metadata files in an ICS supporting
+a dCDN, there are files that contain `curl` commands designed to access the content
+from that dCDN to test its interpretation of the available metadata associated
+with a piece/set of content.
+
+Files whose names match the pattern `test-XXXX.curl` can be `source`d to invoke
+`curl` to issue HTTP requests to a dCDN running on the localhost at port 8080 to
+test the behavior of that dCDN when interpreting the structural metadata installed
+on the supporting ICS with the `put-XXXX.curl` command (see [above](#test-files)).
