@@ -27,14 +27,12 @@ use awc::http::StatusCode;
 use awc::http::header::HOST;
 use brooks_lib::common::Pretty;
 use brooks_lib::dcdn::common::safe_brooks_integration_handle;
-use brooks_lib::dcdn::interpret::ProcessedRequestResponse;
 use brooks_lib::environment::scope::{Scope, Scopes};
 use brooks_lib::hmds::{HmdsConfiguration, HmdsServerConfiguration};
 use brooks_lib::logging::LogLevel::Debug;
 use brooks_lib::logging::{LogMsgFormatter, LogMsgs};
 use brooks_lib::mel::interpreter::builtins::builtin_builtin_function_interpreters;
 use brooks_lib::mel::interpreter::values::TypedValue;
-use brooks_lib::prr;
 use log::Level::Trace;
 use log::{info, log};
 
@@ -161,19 +159,11 @@ async fn index(
         }
     };
 
-    let prr = match TryInto::<ProcessedRequestResponse>::try_into(&http_request) {
-        Ok(prr) => prr,
-        Err(e) => {
-            return actix_web::HttpResponse::InternalServerError()
-                .message_body(e.to_string().into())
-                .expect("Could not construct error response.");
-        }
-    };
-
     let processing_result = match tokio::runtime::Handle::current()
         .spawn_blocking(move || {
             let scopes: Scopes<TypedValue> = (&builtin_builtin_function_interpreters()
-                + &Scope::<TypedValue>::from(&prr as &dyn prr::Prr<Vec<u8>>))
+                + &Scope::<TypedValue>::try_from(&http_request)
+                    .expect("Could not get scope from request"))
                 .into();
 
             let mut config = data.try_lock().expect("Could not lock the configuration.");
