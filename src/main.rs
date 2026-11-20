@@ -37,6 +37,8 @@ use log::{LevelFilter, info};
 use brooks_lib::hmds::logging::session::Span;
 use std::sync::{Arc, Mutex};
 
+use crate::logger::LoggingInterfaceImpl;
+
 mod echo;
 mod hmds;
 mod logger;
@@ -216,8 +218,6 @@ async fn main() {
             user,
             group,
         } => {
-            use crate::logger::LoggingInterfaceImpl;
-
             let mut ls = supported::LiSession {
                 metadata: supported::LiMetadata {
                     uuid: Some(uuid::Uuid::from_bytes(rand::random())),
@@ -261,12 +261,14 @@ async fn main() {
             port,
             timeout,
         } => {
-            let mut ls = session::LiSession {
-                metadata: session::LiMetadata {
+            let mut ls = supported::LiSession {
+                metadata: supported::LiMetadata {
                     uuid: Some(uuid::Uuid::from_bytes(rand::random())),
                     origin: Some((Some("localhost".to_string()), None)),
                     start: Some(chrono::Utc::now()),
                     stop: None,
+                    author: Some("Brooks ICS".to_string()),
+                    generator: Some("Brooks ICS".to_string()),
                 },
                 current_span: Span {
                     start: chrono::Utc::now(),
@@ -277,6 +279,7 @@ async fn main() {
             ls.metadata.uuid = Some(uuid::Uuid::from_bytes(rand::random()));
 
             let lii = LoggingInterfaceImpl {
+                last_gen: Arc::new(Mutex::new(chrono::Utc::now())),
                 max_archived_spans: 5,
                 interval: std::time::Duration::from_secs(10),
                 log_session: Arc::new(Mutex::new(ls)),

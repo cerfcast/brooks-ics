@@ -191,6 +191,9 @@ async fn plog_handler(
     log_session
         .add_record(llog)
         .map_err(|e| actix_web::error::InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
+
+    debug!("Successfully logged a record over HTTP.");
+
     Ok("".into())
 }
 
