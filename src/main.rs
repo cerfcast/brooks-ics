@@ -28,13 +28,18 @@ use brooks_lib;
 mod test;
 
 use brooks_lib::hmds::HmdsServerConfiguration;
+use brooks_lib::hmds::logging::supported;
 use clap::{ArgAction, CommandFactory, Parser, Subcommand};
 use clio::ClioPath;
 use flexi_logger::{FileSpec, LogSpecification, Logger};
 use log::{LevelFilter, info};
 
+use brooks_lib::hmds::logging::session::Span;
+use std::sync::{Arc, Mutex};
+
 mod echo;
 mod hmds;
+mod logger;
 mod proxy;
 
 #[derive(Debug, Clone)]
@@ -210,29 +215,89 @@ async fn main() {
             timeout,
             user,
             group,
-        } => match hmds::server(host, port, path, timeout, user, group).await {
-            Ok(_) => Ok(()),
-            Err(e) => Err(AppError::IcsError(e)),
-        },
+        } => {
+            use crate::logger::LoggingInterfaceImpl;
+
+            let mut ls = supported::LiSession {
+                metadata: supported::LiMetadata {
+                    uuid: Some(uuid::Uuid::from_bytes(rand::random())),
+                    origin: Some((Some("localhost".to_string()), None)),
+                    start: Some(chrono::Utc::now()),
+                    stop: None,
+                    author: Some("Brooks ICS".to_string()),
+                    generator: Some("Brooks ICS".to_string()),
+                },
+                current_span: Span {
+                    start: chrono::Utc::now(),
+                    stop: None,
+                    records: vec![],
+                },
+            };
+            ls.metadata.uuid = Some(uuid::Uuid::from_bytes(rand::random()));
+
+            let lii = LoggingInterfaceImpl {
+                last_gen: Arc::new(Mutex::new(chrono::Utc::now())),
+                max_archived_spans: 5,
+                interval: std::time::Duration::from_secs(10),
+                log_session: Arc::new(Mutex::new(ls)),
+                spans: Arc::new(Mutex::new(vec![])),
+            };
+
+            match tokio::spawn(async move {
+                tokio::select! {
+                    _ = tokio::signal::ctrl_c() => {
+                        Ok(())
+                    },
+                    result = hmds::server(host, port, path, timeout, user, group, lii.clone()) => result,
+                    result = lii.run() => result,
+            }}).await {
+                Ok(ics_result) => ics_result.map_err(AppError::IcsError),
+                Err(spawn_error) => Err(AppError::IcsError(spawn_error.into())),
+            }
+        }
         #[cfg(not(feature = "domain"))]
         Commands::Hmds {
             host,
             port,
             timeout,
-        } => match hmds::server(
-            host,
-            port,
-            #[cfg(feature = "domain")]
-            path,
-            timeout,
-            None,
-            None,
-        )
-        .await
-        {
-            Ok(_) => Ok(()),
-            Err(e) => Err(AppError::IcsError(e)),
-        },
+        } => {
+            let mut ls = session::LiSession {
+                metadata: session::LiMetadata {
+                    uuid: Some(uuid::Uuid::from_bytes(rand::random())),
+                    origin: Some((Some("localhost".to_string()), None)),
+                    start: Some(chrono::Utc::now()),
+                    stop: None,
+                },
+                current_span: Span {
+                    start: chrono::Utc::now(),
+                    stop: None,
+                    records: vec![],
+                },
+            };
+            ls.metadata.uuid = Some(uuid::Uuid::from_bytes(rand::random()));
+
+            let lii = LoggingInterfaceImpl {
+                max_archived_spans: 5,
+                interval: std::time::Duration::from_secs(10),
+                log_session: Arc::new(Mutex::new(ls)),
+                spans: Arc::new(Mutex::new(vec![])),
+            };
+
+            match tokio::spawn(async move {
+                tokio::select! {
+                        _ = tokio::signal::ctrl_c() => {
+                            Ok(())
+                        },
+                        result = hmds::server(host, port, timeout, lii.clone()) => result,
+                        result = lii.run() => result,
+                }
+            })
+            .await
+            {
+                Ok(ics_result) => ics_result.map_err(AppError::IcsError),
+                Err(spawn_error) => Err(AppError::IcsError(spawn_error.into())),
+            }
+        }
     };
 
     if let Err(e) = result {

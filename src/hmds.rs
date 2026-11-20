@@ -21,18 +21,25 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use actix_web::{App, HttpServer, delete, get, middleware::Logger, post, put, web};
+use actix_web::{
+    App, HttpResponse, HttpServer, delete, get, http::header::ContentType, middleware::Logger,
+    post, put, web,
+};
+use awc::http::StatusCode;
 #[cfg(feature = "domain")]
 use brooks_lib::hmds;
 use brooks_lib::{
     cdni::{self, imd::spec::TypedHostMetadata, logging::record::LogRecord},
-    hmds::ExpirableJsonValue,
+    hmds::{
+        ExpirableJsonValue,
+        logging::{feed::Feed, session::AddSessionRecord},
+    },
 };
 use chrono::{DateTime, Duration, Utc};
 
 #[cfg(feature = "domain")]
 use log::error;
-use log::info;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -46,6 +53,8 @@ use tokio::{
     net::{UnixListener, UnixStream},
 };
 
+use crate::logger::LoggingInterfaceImpl;
+
 pub type Hmds = (DateTime<Utc>, TypedHostMetadata<()>);
 
 #[derive(Debug, Clone)]
@@ -53,6 +62,7 @@ pub struct HmdsWebConfiguration {
     ip: String,
     port: u16,
     hmds: Arc<Mutex<HashMap<String, Hmds>>>,
+    log_session: LoggingInterfaceImpl,
     timeout: Duration,
 }
 
@@ -60,10 +70,23 @@ pub struct HmdsWebConfiguration {
 #[derive(Clone)]
 pub struct HmdsDomainConfiguration {
     hmds: Arc<Mutex<HashMap<String, Hmds>>>,
+    log_session: LoggingInterfaceImpl,
     server_path: ClioPath,
     user: Option<String>,
     group: Option<String>,
 }
+
+#[cfg(feature = "domain")]
+impl Drop for HmdsDomainConfiguration {
+    fn drop(&mut self) {
+        if let Err(e) = fs::remove_file(self.server_path.path()) {
+            error!("There was an error removing the domain socket: {e}")
+        } else {
+            debug!("Domain socket was removed safely.")
+        }
+    }
+}
+
 #[cfg(not(feature = "domain"))]
 #[derive(Clone)]
 pub struct HmdsDomainConfiguration {}
@@ -156,15 +179,43 @@ async fn qry(
 }
 
 #[post("/plog/")]
-async fn plog(
+async fn plog_handler(
     body: web::Json<cdni::logging::record::LogRecordRaw>,
-    _data: web::Data<HmdsWebConfiguration>,
+    data: web::Data<HmdsWebConfiguration>,
 ) -> actix_web::Result<String> {
     info!("HMDS log on HTTP.");
-    let log: LogRecord = TryInto::<LogRecord>::try_into(body.0).map_err(std::io::Error::other)?;
-    info!("HMDS log: {log:?}");
+    let llog: LogRecord = TryInto::<LogRecord>::try_into(body.0).map_err(std::io::Error::other)?;
+    info!("HMDS log: {llog:?}");
 
+    let mut log_session = data.log_session.log_session.lock().unwrap();
+    log_session
+        .add_record(llog)
+        .map_err(|e| actix_web::error::InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
     Ok("".into())
+}
+
+#[get("/atom/")]
+async fn atom_handler(data: web::Data<HmdsWebConfiguration>) -> HttpResponse {
+    match data.log_session.feed() {
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Ok(atom) => HttpResponse::Ok()
+            .content_type(ContentType::xml())
+            .body(atom),
+    }
+}
+
+#[get("/log/{log_id}")]
+async fn log_handler(
+    path: web::Path<String>,
+    data: web::Data<HmdsWebConfiguration>,
+) -> HttpResponse {
+    let log_id = path.into_inner();
+    match data.log_session.log(log_id) {
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Ok(latom) => HttpResponse::Ok()
+            .content_type(ContentType::plaintext())
+            .body(latom),
+    }
 }
 
 #[allow(unused)]
@@ -173,8 +224,9 @@ pub async fn server(
     port: u16,
     #[cfg(feature = "domain")] path: ClioPath,
     timeout: Duration,
-    user: Option<String>,
-    group: Option<String>,
+    #[cfg(feature = "domain")] user: Option<String>,
+    #[cfg(feature = "domain")] group: Option<String>,
+    logging: LoggingInterfaceImpl,
 ) -> io::Result<()> {
     let metadata: HashMap<String, (DateTime<Utc>, TypedHostMetadata<()>)> = HashMap::new();
     let metadata = Arc::new(Mutex::new(metadata));
@@ -182,6 +234,7 @@ pub async fn server(
     let web_configuration = HmdsWebConfiguration {
         ip: ip.clone(),
         port,
+        log_session: logging.clone(),
         hmds: metadata.clone(),
         timeout,
     };
@@ -190,6 +243,7 @@ pub async fn server(
     let domain_configuration = HmdsDomainConfiguration {
         hmds: metadata.clone(),
         server_path: path.clone(),
+        log_session: logging.clone(),
         user: user.clone(),
         group: group.clone(),
     };
@@ -198,9 +252,6 @@ pub async fn server(
 
     let result = tokio::spawn(async move {
         tokio::select! {
-            _ = tokio::signal::ctrl_c() => {
-                Ok(())
-            },
             result = domain_hmds(domain_configuration) => result,
             result = {
                 info!("About to start HTTP HMDS server on http://{ip}:{port}/");
@@ -214,7 +265,9 @@ pub async fn server(
                     .service(add_hmd)
                     .service(status)
                     .service(qry)
-                    .service(plog)
+                    .service(atom_handler)
+                    .service(log_handler)
+                    .service(plog_handler)
                 })
                 .bind((web_configuration.ip, web_configuration.port))?
                 .run()
@@ -223,8 +276,9 @@ pub async fn server(
     })
     .await;
 
-    // Instead of using a Drop implementation (because that does not let us show an error),
-    // delete the path to the domain socket here.
+    // In addition to using a Drop implementation (which will be what deletes the domain socket
+    // when the server is stopped with Ctrl-C), delete the path to the domain socket here and
+    // report errors back to the caller.
     #[cfg(feature = "domain")]
     fs::remove_file(path.path())?;
 
@@ -393,6 +447,17 @@ pub async fn do_domain_hmds(
             let log: LogRecord =
                 TryInto::<LogRecord>::try_into(log_raw.log).map_err(std::io::Error::other)?;
             info!("HMDS log: {log:?}");
+
+            {
+                let mut log_session = config.log_session.log_session.lock().unwrap();
+                if let Err(e) = log_session.add_record(log) {
+                    error!(
+                        "There was an error adding a log record to the current logging session: {e}"
+                    );
+                } else {
+                    debug!("Successfully logged a record.");
+                };
+            }
         }
     }
     Ok(())

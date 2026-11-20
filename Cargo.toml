@@ -24,6 +24,8 @@ tokio = {version = "1.53.1", features = ["rt", "macros"] }
 url = "2.5.8"
 
 brooks-lib = { path = "lib", default-features = false, features = ["dcdn"] }
+uuid = "1.29.2"
+rand = "0.10.3"
 
 [features]
 domain = []
