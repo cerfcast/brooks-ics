@@ -272,18 +272,13 @@ pub async fn server(
                     .service(log_handler)
                     .service(plog_handler)
                 })
+                .disable_signals()
                 .bind((web_configuration.ip, web_configuration.port))?
                 .run()
             } => result,
         }
     })
     .await;
-
-    // In addition to using a Drop implementation (which will be what deletes the domain socket
-    // when the server is stopped with Ctrl-C), delete the path to the domain socket here and
-    // report errors back to the caller.
-    #[cfg(feature = "domain")]
-    fs::remove_file(path.path())?;
 
     result?
 }

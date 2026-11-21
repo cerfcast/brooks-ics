@@ -245,9 +245,7 @@ async fn main() {
 
             match tokio::spawn(async move {
                 tokio::select! {
-                    _ = tokio::signal::ctrl_c() => {
-                        Ok(())
-                    },
+                    _ = tokio::signal::ctrl_c() => Ok(()),
                     result = hmds::server(host, port, path, timeout, user, group, lii.clone()) => result,
                     result = lii.run() => result,
             }}).await {
