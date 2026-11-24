@@ -18,6 +18,7 @@
 use std::{
     collections::HashMap,
     io,
+    net::IpAddr,
     sync::{Arc, Mutex},
 };
 
@@ -59,7 +60,7 @@ pub type Hmds = (DateTime<Utc>, TypedHostMetadata<()>);
 
 #[derive(Debug, Clone)]
 pub struct HmdsWebConfiguration {
-    ip: String,
+    ip: IpAddr,
     port: u16,
     hmds: Arc<Mutex<HashMap<String, Hmds>>>,
     log_session: LoggingInterfaceImpl,
@@ -223,7 +224,7 @@ async fn log_handler(
 
 #[allow(unused)]
 pub async fn server(
-    ip: String,
+    ip: IpAddr,
     port: u16,
     #[cfg(feature = "domain")] path: ClioPath,
     timeout: Duration,
@@ -235,7 +236,7 @@ pub async fn server(
     let metadata = Arc::new(Mutex::new(metadata));
 
     let web_configuration = HmdsWebConfiguration {
-        ip: ip.clone(),
+        ip,
         port,
         log_session: logging.clone(),
         hmds: metadata.clone(),

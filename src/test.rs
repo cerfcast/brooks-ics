@@ -35,6 +35,15 @@ mod cli_tests {
         assert_cmd_snapshot!(Command::new(get_cargo_bin("brooks-ics")).arg("--help"));
     }
 
+    #[test]
+    fn hmds_ics_bad_ip_address() {
+        apply_binary_name_filters!();
+        assert_cmd_snapshot!(
+            Command::new(get_cargo_bin("brooks-ics"))
+                .args(["hmds", "--ip", ".0.0.0", "--port", "8081",])
+        );
+    }
+
     #[cfg(feature = "domain")]
     #[test]
     fn hmds_help_test_with_domain() {

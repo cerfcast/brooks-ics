@@ -1,0 +1,30 @@
+---
+source: src/test.rs
+info:
+  program: brooks-ics
+  args:
+    - hmds
+    - "--ip"
+    - ".0.0.0"
+    - "--port"
+    - "8081"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Error: Could not parse .0.0.0 into an IP address: invalid IP address syntax
+Usage: [BROOKS_ICS] [OPTIONS] <COMMAND>
+
+Commands:
+  proxy  
+  echo   
+  hmds   
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+      --debug...             
+      --log-file <LOG_FILE>  
+  -h, --help                 Print help
+
+
+----- stderr -----

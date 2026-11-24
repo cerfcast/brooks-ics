@@ -126,7 +126,7 @@ enum Commands {
     },
     Hmds {
         #[arg(long, default_value = "127.0.0.1")]
-        host: String,
+        ip: String,
         #[arg(long, default_value = "8080")]
         port: u16,
         #[arg(long)]
@@ -150,7 +150,7 @@ enum Commands {
 
 #[derive(Debug)]
 pub enum AppError {
-    CliError(Box<std::io::Error>),
+    CliError(Box<dyn std::error::Error>),
     IcsError(std::io::Error),
     EchoError(std::io::Error),
     ProxyError(std::io::Error),
@@ -202,7 +202,7 @@ async fn main() {
 
     info!("Executing requested command: {:?}", command);
 
-    let result = match command {
+    let result = (async || match command {
         Commands::Proxy { host, port, path } => {
             match HmdsServerConfiguration::new_by_sense(&path) {
                 Ok(config) => proxy::proxy(host, port, config)
@@ -214,7 +214,7 @@ async fn main() {
         Commands::Echo { host, port } => echo::echo(host, port).await.map_err(AppError::ProxyError),
         #[cfg(feature = "domain")]
         Commands::Hmds {
-            host,
+            ip,
             port,
             origin,
             path,
@@ -222,12 +222,15 @@ async fn main() {
             user,
             group,
         } => {
+            let ip = ip.parse::<IpAddr>().map_err(|e| {
+                AppError::CliError(format!("Could not parse {ip} into an IP address: {e}").into())
+            })?;
             let mut ls = supported::LiSession {
                 metadata: supported::LiMetadata {
                     uuid: Some(uuid::Uuid::from_bytes(rand::random())),
                     origin: origin
                         .map(|origin| Some((Some(origin), None)))
-                        .unwrap_or(Some((None, host.parse::<IpAddr>().ok()))),
+                        .unwrap_or(Some((None, Some(ip)))),
                     start: Some(chrono::Utc::now()),
                     stop: None,
                     author: Some("Brooks ICS".to_string()),
@@ -252,7 +255,7 @@ async fn main() {
             match tokio::spawn(async move {
                 tokio::select! {
                     _ = tokio::signal::ctrl_c() => Ok(()),
-                    result = hmds::server(host, port, path, timeout, user, group, lii.clone()) => result,
+                    result = hmds::server(ip, port, path, timeout, user, group, lii.clone()) => result,
                     result = lii.run() => result,
             }}).await {
                 Ok(ics_result) => ics_result.map_err(AppError::IcsError),
@@ -261,17 +264,20 @@ async fn main() {
         }
         #[cfg(not(feature = "domain"))]
         Commands::Hmds {
-            host,
+            ip,
             port,
             origin,
             timeout,
         } => {
+            let ip = ip.parse::<IpAddr>().map_err(|e| {
+                AppError::CliError(format!("Could not parse {ip} into an IP address: {e}").into())
+            })?;
             let mut ls = supported::LiSession {
                 metadata: supported::LiMetadata {
                     uuid: Some(uuid::Uuid::from_bytes(rand::random())),
                     origin: origin
                         .map(|origin| Some((Some(origin), None)))
-                        .unwrap_or(Some((None, host.parse::<IpAddr>().ok()))),
+                        .unwrap_or(Some((None, Some(ip)))),
                     start: Some(chrono::Utc::now()),
                     stop: None,
                     author: Some("Brooks ICS".to_string()),
@@ -298,7 +304,7 @@ async fn main() {
                         _ = tokio::signal::ctrl_c() => {
                             Ok(())
                         },
-                        result = hmds::server(host, port, timeout, lii.clone()) => result,
+                        result = hmds::server(ip, port, timeout, lii.clone()) => result,
                         result = lii.run() => result,
                 }
             })
@@ -308,7 +314,7 @@ async fn main() {
                 Err(spawn_error) => Err(AppError::IcsError(spawn_error.into())),
             }
         }
-    };
+    })().await;
 
     if let Err(e) = result {
         println!("Error: {e}");
