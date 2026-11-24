@@ -35,6 +35,7 @@ use flexi_logger::{FileSpec, LogSpecification, Logger};
 use log::{LevelFilter, info};
 
 use brooks_lib::hmds::logging::session::Span;
+use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
 
 use crate::logger::LoggingInterfaceImpl;
@@ -128,6 +129,8 @@ enum Commands {
         host: String,
         #[arg(long, default_value = "8080")]
         port: u16,
+        #[arg(long)]
+        origin: Option<String>,
 
         #[cfg(feature = "domain")]
         #[arg(long, default_value = "/tmp/brooks/server")]
@@ -213,6 +216,7 @@ async fn main() {
         Commands::Hmds {
             host,
             port,
+            origin,
             path,
             timeout,
             user,
@@ -221,7 +225,9 @@ async fn main() {
             let mut ls = supported::LiSession {
                 metadata: supported::LiMetadata {
                     uuid: Some(uuid::Uuid::from_bytes(rand::random())),
-                    origin: Some((Some("localhost".to_string()), None)),
+                    origin: origin
+                        .map(|origin| Some((Some(origin), None)))
+                        .unwrap_or(Some((None, host.parse::<IpAddr>().ok()))),
                     start: Some(chrono::Utc::now()),
                     stop: None,
                     author: Some("Brooks ICS".to_string()),
@@ -257,12 +263,15 @@ async fn main() {
         Commands::Hmds {
             host,
             port,
+            origin,
             timeout,
         } => {
             let mut ls = supported::LiSession {
                 metadata: supported::LiMetadata {
                     uuid: Some(uuid::Uuid::from_bytes(rand::random())),
-                    origin: Some((Some("localhost".to_string()), None)),
+                    origin: origin
+                        .map(|origin| Some((Some(origin), None)))
+                        .unwrap_or(Some((None, host.parse::<IpAddr>().ok()))),
                     start: Some(chrono::Utc::now()),
                     stop: None,
                     author: Some("Brooks ICS".to_string()),
